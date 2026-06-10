@@ -1,0 +1,44 @@
+# Catkin / ROS build output
+build/
+devel/
+install/
+logs/
+.catkin_workspace
+.catkin_tools/
+*.pyc
+__pycache__/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ROS bags & logs
+*.bag
+*.bag.active
+*.bag.orig
+*.log
+
+# Python
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# OS / misc
+Thumbs.db
+.directory
+
+# Local config (keep UCON_start.yaml tracked; ignore personal copies)
+*.local.yaml
+*.local.launch

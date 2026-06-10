@@ -1,0 +1,29 @@
+<launch>
+  <node pkg="vision" type="camera_init.py" name="camera_init" output="screen" />
+  <node pkg="perception" type="odom_publish.py" name="odom_publish_node" output="screen" />  
+  
+  <node pkg="perception" type="mapping_node" name="mapping_node" output="screen">
+    <param name="dbscan/core_pts" value="3" type="int"/>
+    <param name="dbscan/tolerance" value="0.02" type="double"/>
+    <param name="dbscan/min_cluster" value="10" type="int"/>
+    <param name="dbscan/max_cluster" value="400" type="int"/>
+    <param name="detection/thresh_dist" value="0.05" type="double"/>
+    <param name="detection/thresh_var" value="0.30" type="double"/>
+    <param name="filtering/floor" value="0.04" type="double"/>
+    <param name="filtering/ceiling" value="0.5" type="double"/>
+    <param name="lidar/range_x" value="8.0" type="double"/>
+    <param name="lidar/range_y" value="8.0" type="double"/>
+    <param name="lidar/range_z" value="2.2" type="double"/>
+    <param name="ros/odom_topic" value="/Odometry" type="string"/>
+    <param name="ros/lidar_topic" value="/livox/lidar" type="string"/>
+  </node>
+
+  <node pkg="tf" type="static_transform_publisher" name="odom_to_lidar" 
+          args="0.0 0.0 0.4 1.0 0.0 0.0 0.0 /odom /lidar_link 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="lidar_to_camera" 
+        args="0.05 0.0 -0.03 0.5 0.5 0.5 0.5 lidar_link camera_link 100"/>
+
+  <node name="rviz" pkg="rviz" type="rviz" 
+        args="-d $(find perception)/launch/rviz/lidar.rviz"/>
+  
+</launch>
