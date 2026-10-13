@@ -12,7 +12,21 @@ Bing Sun, Yue Lin, Yongsheng Yuan, Yang Liu, Dong Wang, and Huchuan Lu.
 
 Accepted to IROS 2026.
 
-## Demo
+## Experiments
+
+### Real-world perception
+
+![UCON real-world perception experiment](assets/real-world-perception.gif)
+
+Real-world perception with UCON, demonstrating obstacle tracking and historical re-association.
+
+### Real-world navigation
+
+![UCON real-world navigation experiment](assets/real-world-navigation.gif)
+
+Overall navigation experiments in real-world dynamic environments.
+
+### Simulation
 
 ![UCON simulation planning with different dynamic obstacle densities](assets/simulation.gif)
 
