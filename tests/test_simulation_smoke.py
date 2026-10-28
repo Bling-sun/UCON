@@ -18,6 +18,15 @@ from traj_utils.msg import PolyTraj
 from visualization_msgs.msg import MarkerArray
 
 
+def resolved_subscription_names(node, topic):
+    """DDS endpoints can be discovered before their ROS node names arrive."""
+    names = [info.node_name for info in node.get_subscriptions_info_by_topic(topic)]
+    if not names or '_NODE_NAME_UNKNOWN_' in names:
+        return None
+    # Keep every endpoint, including unexpected or duplicate subscribers.
+    return sorted(names)
+
+
 class SimulationSmokeTest(unittest.TestCase):
     def test_full_stack_and_navigation_goal(self):
         self.assertTrue(os.environ.get('ROS_DOMAIN_ID'))
@@ -43,11 +52,12 @@ class SimulationSmokeTest(unittest.TestCase):
             ]
             goal_pub = node.create_publisher(PoseStamped, '/move_base_simple/goal', 10)
 
-            def wait_for(condition, seconds=20):
+            def wait_for(condition, seconds=20, description='simulation readiness'):
                 end = time.monotonic() + seconds
                 while not condition():
                     self.assertIsNone(process.poll(), 'Simulation exited; see log/tests/simulation-smoke.log')
-                    self.assertLess(time.monotonic(), end, 'Timed out; see log/tests/simulation-smoke.log')
+                    self.assertLess(time.monotonic(), end,
+                                    f'Timed out waiting for {description}; see log/tests/simulation-smoke.log')
                     rclpy.spin_once(node, timeout_sec=.02)
 
             try:
@@ -55,9 +65,15 @@ class SimulationSmokeTest(unittest.TestCase):
                          and goal_pub.get_subscription_count() > 0)
                 self.assertEqual(len(truth[-1].states), 36)
                 self.assertGreater(static[-1].width, 0)
-                self.assertEqual({info.node_name for info in
-                                  node.get_subscriptions_info_by_topic('/move_base_simple/goal')},
-                                 {'fapp_planner_node'})
+                goal_subscribers = None
+
+                def goal_names_ready():
+                    nonlocal goal_subscribers
+                    goal_subscribers = resolved_subscription_names(node, '/move_base_simple/goal')
+                    return goal_subscribers is not None
+
+                wait_for(goal_names_ready, description='resolved navigation-goal subscriber names')
+                self.assertEqual(goal_subscribers, ['fapp_planner_node'])
                 initial_map = bytes(maps[-1].data)
                 points = point_cloud2.read_points_numpy(
                     maps[-1], field_names=('x', 'y', 'z'), skip_nans=True)
@@ -87,7 +103,10 @@ class SimulationSmokeTest(unittest.TestCase):
             finally:
                 node.destroy_node()
                 rclpy.shutdown()
-                os.killpg(process.pid, signal.SIGINT)
+                # Let launch signal its children once; a group SIGINT also
+                # reaches them directly and can interrupt their cleanup twice.
+                if process.poll() is None:
+                    process.send_signal(signal.SIGINT)
                 try:
                     process.wait(timeout=12)
                 except subprocess.TimeoutExpired:

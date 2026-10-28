@@ -31,11 +31,12 @@ Current CI results are available in the repository's Actions tab.
 
 ## Checks passed
 
-`./build.sh` built all 12 packages. `./scripts/test.sh` passed eight simulation test cases. Five offline demo-evidence cases were added and passed:
+`./build.sh` built all 12 packages. `./scripts/test.sh` passed 16 test cases:
 
 | Test | Behavior verified |
 | --- | --- |
 | `test_demo_recording.py` (5 cases) | Piecewise polynomial evaluation, exclusion of goal switches and stationary objects, rejection of actual contact, deduplication of obstacle IDs |
+| `test_graph_discovery.py` (3 cases) | Wait for all subscriber names to resolve; preserve unexpected and duplicate subscribers for strict validation |
 | `test_grid_map_inflation.py` (2 cases) | Persistent occupancy does not blink; stale occupancy and inflation expire together |
 | `test_ground_truth_perception.py` | 36 overlapping objects keep separate IDs; complete bounds, 4.5 m range, drone movement, marker deletion and independent static input |
 | `test_mapping_frames.py` | World points remain invariant under drone motion; body points are transformed once |
@@ -47,6 +48,14 @@ Current CI results are available in the repository's Actions tab.
 The optimizer's intersection handling was corrected so a hit for a previous
 control point cannot cause an uninitialized intersection to be consumed for
 the current control point. Test subprocesses are cleaned up after each run.
+
+The simulation smoke test waits for ROS graph node names as well as endpoint
+discovery before checking that the navigation goal has exactly one subscriber,
+`fapp_planner_node`. DDS can report a matching endpoint with the temporary name
+`_NODE_NAME_UNKNOWN_` before its ROS node metadata arrives. This caused the
+[initial demo-update CI failure](https://github.com/Bling-sun/UCON/actions/runs/40672197317).
+The wait remains bounded at 20 seconds; unknown names are not accepted as valid,
+and unexpected or duplicate subscribers still fail the test.
 
 ## Demonstration
 
