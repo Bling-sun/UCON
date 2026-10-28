@@ -65,8 +65,8 @@ python3 scripts/record_demo.py
 ```
 
 录制使用独立的虚拟显示和 ROS 域 182，输出 `assets/demo.gif`；原始视频及日志位于 `log/demo/`。
-默认录制 72 个动态障碍物，最多 40 秒，到达全部目标后结束；`--speed 2` 控制播放倍速。
-可以用 `--domain` 更换空闲域、`--seconds` 设置最长录制时间、`--dynamic-obstacles` 和 `--map-seed` 调整场景。
+默认录制 110 个静态、72 个动态障碍物，种子为 `3728542750`，最多 40 秒，到达全部目标后结束；`--speed 2` 控制播放倍速。
+可以用 `--domain` 更换空闲域、`--seconds` 设置最长录制时间、`--static-obstacles`、`--dynamic-obstacles` 和 `--map-seed` 调整场景。
 脚本保存同步真值、里程计、轨迹及核验结果；仅在目标到达、多障碍物避让和采样间距检查均通过后覆盖 GIF，
 并生成带 GIF 校验和的 `assets/demo.metrics.json`。未通过的运行会保留日志并返回失败。
 

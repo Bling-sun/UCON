@@ -1,43 +1,45 @@
 {
   "avoided_conflicts": [
     {
-      "object_id": 9,
-      "replan_s": 7.278202295303345,
-      "conflict_s": 9.021552562713623,
+      "object_id": 56,
+      "replan_s": 10.087070941925049,
+      "conflict_s": 12.913836240768433,
       "previous_plan_clearance_m": 0.0,
-      "flown_clearance_m": 0.6690874071326942
+      "flown_clearance_m": 0.5435682799970611
     },
     {
-      "object_id": 17,
-      "replan_s": 12.016984462738037,
-      "conflict_s": 13.971550703048706,
-      "previous_plan_clearance_m": 0.19203659896863812,
-      "flown_clearance_m": 0.7605315273053588
+      "object_id": 6,
+      "replan_s": 16.627729177474976,
+      "conflict_s": 19.163853645324707,
+      "previous_plan_clearance_m": 0.0,
+      "flown_clearance_m": 1.095517086608147
     }
   ],
-  "static_obstacles": 60,
+  "static_obstacles": 110,
   "dynamic_obstacles": 72,
-  "map_seed": 3728542744,
+  "map_seed": 3728542750,
   "playback_speed": 2.0,
-  "recorded_seconds": 23.848068237304688,
+  "recorded_seconds": 21.066033124923706,
   "goals_reached": 4,
   "goals_total": 4,
-  "path_m": 32.969289155555614,
-  "min_center_to_dynamic_aabb_m": 0.5643856247029853,
-  "min_center_to_static_point_m": 0.3143437369242103,
+  "path_m": 32.05545400862738,
+  "min_center_to_dynamic_aabb_m": 0.4694644921108032,
+  "min_center_to_static_point_m": 0.310238554906193,
   "moving_objects_within_1_5m": [
-    9,
-    17,
-    48,
-    59,
-    71
+    1,
+    6,
+    24,
+    47,
+    56,
+    59
   ],
   "safety_replans": 16,
-  "dynamic_prediction_warnings": 655,
-  "trajectory_updates": 35,
-  "truth_samples": 477,
-  "max_truth_gap_s": 0.054660797119140625,
+  "dynamic_prediction_warnings": 689,
+  "trajectory_updates": 32,
+  "truth_samples": 421,
+  "max_truth_gap_s": 0.05330181121826172,
+  "max_odom_gap_s": 0.01648235321044922,
   "validation": "passed",
-  "max_odom_gap_s": 0.016306638717651367,
-  "gif_sha256": "98b87730c9b40a069321b6b5ce0bc191672121835dc3e68ba8543d9298768b6e"
+  "gif_sha256": "5c6842db1d8fd4d43125ff2559d64d5fd41b3511205d0d591cb69b4cd1fd7785",
+  "avoidance_comparison": "remaining_previous_plan_until_next_goal"
 }

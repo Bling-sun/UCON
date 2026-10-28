@@ -31,11 +31,11 @@ Current CI results are available in the repository's Actions tab.
 
 ## Checks passed
 
-`./build.sh` built all 12 packages. `./scripts/test.sh` passed 16 test cases:
+`./build.sh` built all 12 packages. `./scripts/test.sh` passed 18 test cases:
 
 | Test | Behavior verified |
 | --- | --- |
-| `test_demo_recording.py` (5 cases) | Piecewise polynomial evaluation, exclusion of goal switches and stationary objects, rejection of actual contact, deduplication of obstacle IDs |
+| `test_demo_recording.py` (7 cases) | Piecewise polynomial evaluation, exclusion of goal switches and stationary objects, rejection of actual contact, deduplication of obstacle IDs, remaining-plan coverage and stopping at future goal changes |
 | `test_graph_discovery.py` (3 cases) | Wait for all subscriber names to resolve; preserve unexpected and duplicate subscribers for strict validation |
 | `test_grid_map_inflation.py` (2 cases) | Persistent occupancy does not blink; stale occupancy and inflation expire together |
 | `test_ground_truth_perception.py` | 36 overlapping objects keep separate IDs; complete bounds, 4.5 m range, drone movement, marker deletion and independent static input |
@@ -60,40 +60,41 @@ and unexpected or duplicate subscribers still fail the test.
 ## Demonstration
 
 `assets/demo.gif` is a selected successful run recorded from the actual RViz
-display by `scripts/record_demo.py`. It uses seed `3728542744`, 60 static objects,
-72 moving objects and truth mode with a 4.5 m range. The normal interactive
-launch remains at 60 static / 36 moving objects. The script uses a private ROS
-domain and sends the next goal only after reaching the previous one (0.35 m
-tolerance). Camera framing is closer than the previous demonstration.
+display by `scripts/record_demo.py`. It uses seed `3728542750`, 110 static
+objects, 72 moving objects and truth mode with a 4.5 m range. The normal
+interactive launch remains at 60 static / 36 moving objects with seed
+`3728542744`. The recorder uses a private ROS domain and sends the next goal
+only after reaching the previous one (0.35 m tolerance).
 
-The raw video lasts 23.8 seconds. Applying `setpts=(PTS-STARTPTS)/2` produces
-an 11.9-second GIF: 238 frames at 20 fps, 800 x 520 pixels, about 8 MB.
-The run reaches all four goals, travels 32.97 m and has 16 successful safety
-replans. These replans are responses to predicted conflicts, not physical
-collisions, and their count is not a count of distinct avoided obstacles.
+The raw video lasts 21.1 seconds. Applying `setpts=(PTS-STARTPTS)/2` produces
+a 10.55-second GIF: 211 frames at 20 fps, 800 x 520 pixels,
+about 6.5 MB. The run reaches all four goals,
+travels 32.06 m and has 16 successful safety replans.
+These replans are responses to predicted conflicts, not physical collisions,
+and their count is not a count of distinct avoided obstacles.
 
 The recorder saves time-stamped odometry, complete object bounds/velocities,
 polynomial trajectory coefficients and goal events in `log/demo/telemetry.json`.
 It interpolates odometry to truth timestamps and computes center-to-AABB
-Euclidean distance. In this clip, 477 truth samples have a maximum gap of
-0.055 s; the minimum dynamic distance is 0.564 m. The minimum center-to-static-
-point distance is 0.314 m. These are sampled geometric checks, not continuous
-collision certification of the drone mesh.
+Euclidean distance. In this clip, 421 truth samples have a maximum gap
+of 0.053 s. Minimum sampled distances are 0.469 m from the drone
+center to dynamic bounds and 0.310 m to static points. These are sampled
+geometric checks, not continuous collision certification of the drone mesh.
 
 To distinguish avoidance from a goal-induced turn, the offline check excludes
 goal changes and evaluates each replaced polynomial against the **subsequently
-observed** obstacle positions for up to two seconds, stopping at the old plan's
-end. It finds two distinct moving objects for which retaining the previous
-plan would enter a 0.25 m buffer while the actual flown path stays outside:
+observed** obstacle positions over its remaining duration, stopping at the
+old plan's end or the next goal change. It finds two distinct moving objects
+for which retaining the previous plan would enter a 0.25 m buffer while the actual flown path stays outside:
 
 | Generator object ID | Time after recording starts | Previous-plan clearance | Flown clearance at the same instant |
 | --- | --- | --- | --- |
-| 9 | 9.02 s | 0.000 m | 0.669 m |
-| 17 | 13.97 s | 0.192 m | 0.761 m |
+| 56 | 12.91 s | 0.000 m | 0.544 m |
+| 6 | 19.16 s | 0.000 m | 1.096 m |
 
 IDs are stable indices in the generator truth array. This retrospective check
 supports the selected demonstration; it is not a prediction-accuracy benchmark.
-Five moving objects pass within 1.5 m, but proximity alone is not counted as
+Six moving objects pass within 1.5 m, but proximity alone is not counted as
 avoidance. The GIF caption and UAV label are display annotations.
 
 The script rejects runs unless all four goals are reached, at least two distinct

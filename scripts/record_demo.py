@@ -30,15 +30,16 @@ def avoided_conflicts(telemetry):
     """Compare each replaced plan with the subsequently observed moving objects.
 
     This is an offline counterfactual, not a planner collision detector: retain
-    the old polynomial for up to two seconds and check its distance to the
-    recorded object AABBs. Ignore goal changes. A conflict means less than
+    the remaining old polynomial and check its distance to the recorded object
+    AABBs, stopping at its end or the next goal. A conflict means less than
     0.25 m point-to-box clearance; the flown path is validated separately.
     """
     odometry = np.asarray(telemetry['odom'])
     events = {}
     for old, new in zip(telemetry['trajectories'], telemetry['trajectories'][1:]):
         start = new['stamp']
-        end = min(start + 2., old['stamp'] + sum(old['duration']))
+        end = min(old['stamp'] + sum(old['duration']),
+                  min((t for t, _ in telemetry['goals'] if t > start), default=float('inf')))
         if any(old['stamp'] < t <= start + .1 for t, _ in telemetry['goals']):
             continue
         for stamp, objects in telemetry['truth']:
@@ -73,8 +74,9 @@ def main():
     parser.add_argument('--domain', type=int, default=182)
     parser.add_argument('--output', default='assets/demo.gif')
     parser.add_argument('--speed', type=float, default=2.)
+    parser.add_argument('--static-obstacles', type=int, default=110)
     parser.add_argument('--dynamic-obstacles', type=int, default=72)
-    parser.add_argument('--map-seed', type=int, default=3728542744)
+    parser.add_argument('--map-seed', type=int, default=3728542750)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     os.chdir(root)
@@ -86,7 +88,7 @@ def main():
     if args.seconds < 8:
         parser.error('--seconds must be at least 8')
 
-    if args.speed <= 0 or args.dynamic_obstacles < 1:
+    if args.speed <= 0 or args.static_obstacles < 1 or args.dynamic_obstacles < 1:
         parser.error('Speed and obstacle count must be positive')
 
     output = Path(args.output).resolve()
@@ -142,6 +144,7 @@ def main():
                 raise RuntimeError('Virtual display failed; see log/demo/display.log')
             time.sleep(.1)
         start([str(root / 'run_simulation.sh'), 'rviz:=false',
+               f'static_obstacles:={args.static_obstacles}',
                f'dynamic_obstacles:={args.dynamic_obstacles}',
                f'map_seed:={args.map_seed}'], 'simulation')
         start(['/opt/ros/jazzy/lib/rviz2/rviz2', '-d', str(config_path)], 'rviz')
@@ -271,7 +274,8 @@ def main():
         replans = len(re.findall(r'Plan success when detect collision', simulation_log))
         dynamic_warnings = len(re.findall(r'detect collision with objects', simulation_log))
         conflicts = avoided_conflicts(telemetry)
-        summary = {'avoided_conflicts': conflicts, 'static_obstacles': 60, 'dynamic_obstacles': args.dynamic_obstacles,
+        summary = {'avoidance_comparison': 'remaining_previous_plan_until_next_goal',
+                   'avoided_conflicts': conflicts, 'static_obstacles': args.static_obstacles, 'dynamic_obstacles': args.dynamic_obstacles,
                    'map_seed': args.map_seed, 'playback_speed': args.speed,
                    'recorded_seconds': recording_end - recording_stamp,
                    'goals_reached': len(reached), 'goals_total': len(planned_goals),
@@ -297,7 +301,7 @@ def main():
             f'setpts=(PTS-STARTPTS)/{args.speed},fps=20,crop=1250:690:15:80,scale=800:442:flags=lanczos,'
             'pad=800:520:0:40:color=0xF6F5F4,'
             f"drawtext=text='UCON | Multiple moving obstacles | {args.speed:g}x':x=22:y=10:fontsize=20:fontcolor=0x23334A,"
-            f"drawtext=text='60 static / {args.dynamic_obstacles} moving | Ground-truth boxes within 4.5 m':x=22:y=496:fontsize=13:fontcolor=0x42546A,"
+            f"drawtext=text='{args.static_obstacles} static / {args.dynamic_obstacles} moving | Ground-truth boxes within 4.5 m':x=22:y=496:fontsize=13:fontcolor=0x42546A,"
             'split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];'
             '[b][p]paletteuse=dither=none:diff_mode=rectangle'
         )

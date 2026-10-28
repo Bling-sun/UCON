@@ -38,6 +38,18 @@ class DemoEvidenceTest(unittest.TestCase):
         self.data['goals'] = [[.4, [5., 0., .4]]]
         self.assertEqual(recorder.avoided_conflicts(self.data), [])
 
+    def test_future_goal_switch_ends_comparison(self):
+        self.data['goals'] = [[1.4, [5., 2., .4]]]
+        self.assertEqual(recorder.avoided_conflicts(self.data), [])
+
+    def test_checks_remaining_plan_beyond_two_seconds(self):
+        self.data['trajectories'][0]['duration'] = [1., 3.]
+        self.data['odom'] = [[0., 0., 2., .4], [4., 4., 2., .4]]
+        self.data['truth'] = [[2.75, [[2.75, 0., .4, .3, .3, .3, .1, 0., 0.]]]]
+        events = recorder.avoided_conflicts(self.data)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]['previous_plan_clearance_m'], 0.)
+
     def test_stationary_object_is_not_dynamic_avoidance(self):
         self.data['truth'][0][1][0][6] = 0.
         self.assertEqual(recorder.avoided_conflicts(self.data), [])
