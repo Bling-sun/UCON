@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>poscmd_2_odom</name>
+  <version>2.0.0</version>
+  <description>Convert ROS 2 position commands to simulated odometry.</description>
+  <maintainer email="maintainer@example.com">UCON Maintainer</maintainer>
+  <license>BSD-3-Clause</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>eigen</depend>
+  <depend>nav_msgs</depend>
+  <depend>quadrotor_msgs</depend>
+  <depend>rclcpp</depend>
+  <depend>visualization_msgs</depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

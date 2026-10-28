@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>traj_opt</name>
+  <version>2.0.0</version>
+  <description>ROS 2 polynomial trajectory optimizer.</description>
+  <maintainer email="iszhouxin@zju.edu.cn">iszhouxin</maintainer>
+  <license>BSD-3-Clause</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>eigen</depend>
+  <depend>obj_state_msgs</depend>
+  <depend>path_searching</depend>
+  <depend>plan_env</depend>
+  <depend>rclcpp</depend>
+  <depend>rcutils</depend>
+  <depend>traj_utils</depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

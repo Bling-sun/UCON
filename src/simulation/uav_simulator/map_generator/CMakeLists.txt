@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.8)
+project(map_generator)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_compile_options(-O3 -Wall -Wextra)
+
+find_package(ament_cmake REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(obj_state_msgs REQUIRED)
+find_package(PCL REQUIRED COMPONENTS common kdtree search)
+find_package(pcl_conversions REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+
+add_executable(random_forest src/random_forest_sensing.cpp)
+target_include_directories(random_forest PRIVATE ${PCL_INCLUDE_DIRS})
+ament_target_dependencies(random_forest geometry_msgs obj_state_msgs pcl_conversions rclcpp sensor_msgs)
+target_link_libraries(random_forest Eigen3::Eigen ${PCL_LIBRARIES})
+install(TARGETS random_forest DESTINATION lib/${PROJECT_NAME})
+ament_package()

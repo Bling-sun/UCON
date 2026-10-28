@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>map_generator</name>
+  <version>2.0.0</version>
+  <description>ROS 2 random static and moving obstacle map generator.</description>
+  <maintainer email="bzhouai@todo.todo">bzhouai</maintainer>
+  <license>BSD-3-Clause</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>eigen</depend>
+  <depend>libpcl-all-dev</depend>
+  <depend>geometry_msgs</depend>
+  <depend>obj_state_msgs</depend>
+  <depend>pcl_conversions</depend>
+  <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>
