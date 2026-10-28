@@ -31,10 +31,11 @@ Current CI results are available in the repository's Actions tab.
 
 ## Checks passed
 
-`./build.sh` built all 12 packages. `./scripts/test.sh` passed eight test cases:
+`./build.sh` built all 12 packages. `./scripts/test.sh` passed eight simulation test cases. Five offline demo-evidence cases were added and passed:
 
 | Test | Behavior verified |
 | --- | --- |
+| `test_demo_recording.py` (5 cases) | Piecewise polynomial evaluation, exclusion of goal switches and stationary objects, rejection of actual contact, deduplication of obstacle IDs |
 | `test_grid_map_inflation.py` (2 cases) | Persistent occupancy does not blink; stale occupancy and inflation expire together |
 | `test_ground_truth_perception.py` | 36 overlapping objects keep separate IDs; complete bounds, 4.5 m range, drone movement, marker deletion and independent static input |
 | `test_mapping_frames.py` | World points remain invariant under drone motion; body points are transformed once |
@@ -49,13 +50,49 @@ the current control point. Test subprocesses are cleaned up after each run.
 
 ## Demonstration
 
-`assets/demo.gif` is recorded from the actual RViz display by
-`scripts/record_demo.py`, using the default seed, 60 static objects, 36 moving
-objects and truth mode with a 4.5 m range. The script uses a separate ROS domain,
-sends real planner goals, and checks that the drone travels before producing
-the GIF. The recorded run lasts 24 seconds and travels approximately 23.8 m;
-the GIF has 240 frames at 800 x 520 pixels (approximately 5 MB).
-The caption, UAV label and sensing-range circle are display annotations.
+`assets/demo.gif` is a selected successful run recorded from the actual RViz
+display by `scripts/record_demo.py`. It uses seed `3728542744`, 60 static objects,
+72 moving objects and truth mode with a 4.5 m range. The normal interactive
+launch remains at 60 static / 36 moving objects. The script uses a private ROS
+domain and sends the next goal only after reaching the previous one (0.35 m
+tolerance). Camera framing is closer than the previous demonstration.
+
+The raw video lasts 23.8 seconds. Applying `setpts=(PTS-STARTPTS)/2` produces
+an 11.9-second GIF: 238 frames at 20 fps, 800 x 520 pixels, about 8 MB.
+The run reaches all four goals, travels 32.97 m and has 16 successful safety
+replans. These replans are responses to predicted conflicts, not physical
+collisions, and their count is not a count of distinct avoided obstacles.
+
+The recorder saves time-stamped odometry, complete object bounds/velocities,
+polynomial trajectory coefficients and goal events in `log/demo/telemetry.json`.
+It interpolates odometry to truth timestamps and computes center-to-AABB
+Euclidean distance. In this clip, 477 truth samples have a maximum gap of
+0.055 s; the minimum dynamic distance is 0.564 m. The minimum center-to-static-
+point distance is 0.314 m. These are sampled geometric checks, not continuous
+collision certification of the drone mesh.
+
+To distinguish avoidance from a goal-induced turn, the offline check excludes
+goal changes and evaluates each replaced polynomial against the **subsequently
+observed** obstacle positions for up to two seconds, stopping at the old plan's
+end. It finds two distinct moving objects for which retaining the previous
+plan would enter a 0.25 m buffer while the actual flown path stays outside:
+
+| Generator object ID | Time after recording starts | Previous-plan clearance | Flown clearance at the same instant |
+| --- | --- | --- | --- |
+| 9 | 9.02 s | 0.000 m | 0.669 m |
+| 17 | 13.97 s | 0.192 m | 0.761 m |
+
+IDs are stable indices in the generator truth array. This retrospective check
+supports the selected demonstration; it is not a prediction-accuracy benchmark.
+Five moving objects pass within 1.5 m, but proximity alone is not counted as
+avoidance. The GIF caption and UAV label are display annotations.
+
+The script rejects runs unless all four goals are reached, at least two distinct
+avoidance conflicts are verified, at least three moving objects pass within
+1.5 m, and sampled dynamic/static clearances stay above 0.25 m. It also checks
+telemetry gaps and successful safety replans. Failed runs leave their raw data
+under `log/demo/` without replacing the published GIF. Published metrics and
+the GIF SHA-256 are in [`assets/demo.metrics.json`](../assets/demo.metrics.json).
 
 ## Limits
 

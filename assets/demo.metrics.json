@@ -1,0 +1,43 @@
+{
+  "avoided_conflicts": [
+    {
+      "object_id": 9,
+      "replan_s": 7.278202295303345,
+      "conflict_s": 9.021552562713623,
+      "previous_plan_clearance_m": 0.0,
+      "flown_clearance_m": 0.6690874071326942
+    },
+    {
+      "object_id": 17,
+      "replan_s": 12.016984462738037,
+      "conflict_s": 13.971550703048706,
+      "previous_plan_clearance_m": 0.19203659896863812,
+      "flown_clearance_m": 0.7605315273053588
+    }
+  ],
+  "static_obstacles": 60,
+  "dynamic_obstacles": 72,
+  "map_seed": 3728542744,
+  "playback_speed": 2.0,
+  "recorded_seconds": 23.848068237304688,
+  "goals_reached": 4,
+  "goals_total": 4,
+  "path_m": 32.969289155555614,
+  "min_center_to_dynamic_aabb_m": 0.5643856247029853,
+  "min_center_to_static_point_m": 0.3143437369242103,
+  "moving_objects_within_1_5m": [
+    9,
+    17,
+    48,
+    59,
+    71
+  ],
+  "safety_replans": 16,
+  "dynamic_prediction_warnings": 655,
+  "trajectory_updates": 35,
+  "truth_samples": 477,
+  "max_truth_gap_s": 0.054660797119140625,
+  "validation": "passed",
+  "max_odom_gap_s": 0.016306638717651367,
+  "gif_sha256": "98b87730c9b40a069321b6b5ce0bc191672121835dc3e68ba8543d9298768b6e"
+}

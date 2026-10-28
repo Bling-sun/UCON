@@ -14,7 +14,7 @@ if [[ "$EUID" -ne 0 ]]; then ucon_sudo=(sudo); fi
 "${ucon_sudo[@]}" apt-get update
 "${ucon_sudo[@]}" apt-get install -y \
   build-essential cmake git python3-colcon-common-extensions python3-rosdep \
-  python3-setuptools python3-numpy python3-scipy \
+  python3-setuptools python3-numpy python3-scipy python3-yaml \
   libeigen3-dev libpcl-dev libopencv-dev \
   ros-jazzy-ros-base ros-jazzy-pcl-conversions ros-jazzy-cv-bridge \
   ros-jazzy-rviz2 ros-jazzy-tf2-ros
