@@ -1,4 +1,4 @@
-# UCON — ROS 2 Jazzy
+# UCON
 
 [![ROS 2 build and tests](https://github.com/Bling-sun/UCON/actions/workflows/ros2.yml/badge.svg)](https://github.com/Bling-sun/UCON/actions/workflows/ros2.yml)
 
