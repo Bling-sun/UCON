@@ -63,5 +63,34 @@ class DemoEvidenceTest(unittest.TestCase):
         self.assertEqual(len(recorder.avoided_conflicts(self.data)), 1)
 
 
+class SweptBodyTest(unittest.TestCase):
+    def data(self, drone_start, drone_end, obstacle_start=0., obstacle_end=0.):
+        def obj(x):
+            return [[x, 0., .4, .2, .2, .2, 0., 0., 0.]]
+        return {'recording_start': 0., 'recording_end': 1.,
+                'odom': [[0., drone_start, 0., .4], [1., drone_end, 0., .4]],
+                'truth': [[0., obj(obstacle_start)], [1., obj(obstacle_end)]]}
+
+    def test_drone_crossing_between_samples_is_rejected(self):
+        self.assertLess(recorder.swept_body_clearance(self.data(-1., 1.)), 0.)
+
+    def test_obstacle_crossing_between_samples_is_rejected(self):
+        self.assertLess(recorder.swept_body_clearance(self.data(0., 0., -1., 1.)), 0.)
+
+    def test_clearance_includes_body_and_voxel_size(self):
+        self.assertAlmostEqual(recorder.swept_body_clearance(self.data(2., 2.)), 1.64)
+
+    def test_checks_interior_odometry_samples(self):
+        data = self.data(2., 2.)
+        data['odom'].insert(1, [.5, 0., 0., .4])
+        self.assertLess(recorder.swept_body_clearance(data), 0.)
+
+    def test_requires_complete_telemetry_coverage(self):
+        data = self.data(2., 2.)
+        data['recording_end'] = 1.1
+        with self.assertRaises(ValueError):
+            recorder.swept_body_clearance(data)
+
+
 if __name__ == '__main__':
     unittest.main()

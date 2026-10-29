@@ -27,6 +27,9 @@ UCON_BUILD_WORKERS=1 CMAKE_BUILD_PARALLEL_LEVEL=2 MAKEFLAGS=-j2 ./build.sh
 | `use_ground_truth` | `true` | 直接读取动态障碍物真值；`false` 启用点云检测和 EKF |
 | `truth_range` | `4.5` | 真值模式的感知球半径，单位米 |
 | `target_z` | `0.4` | 手动目标的飞行高度，单位米 |
+| `max_vel` | `3.5` | 规划器与优化器的速度上限，单位米/秒 |
+| `safety_replan_interval` | `0.5` | 安全重规划的最短间隔，单位秒 |
+| `object_clearance` | `1.0` | 触发动态障碍物安全重规划的距离，单位米 |
 | `rviz` | `true` | 是否启动可视化窗口 |
 
 ```bash
@@ -67,10 +70,12 @@ python3 scripts/record_demo.py
 录制使用独立的虚拟显示和 ROS 域 182，输出 `assets/demo.gif`；原始视频及日志位于 `log/demo/`。
 默认录制 110 个静态、72 个动态障碍物，种子为 `3728542750`，最多 40 秒，到达全部目标后结束；`--speed 2` 控制播放倍速。
 可以用 `--domain` 更换空闲域、`--seconds` 设置最长录制时间、`--static-obstacles`、`--dynamic-obstacles` 和 `--map-seed` 调整场景。
-脚本保存同步真值、里程计、轨迹及核验结果；仅在目标到达、多障碍物避让和采样间距检查均通过后覆盖 GIF，
+演示默认速度上限为 3.5 米/秒，安全重规划间隔为 0.2 秒，触发距离为 1.5 米。
+录制速度、安全重规划间隔与触发距离可用 `--max-vel`、`--safety-interval`、`--object-clearance` 设置；实际值保存在演示指标文件中。
+脚本保存同步真值、里程计、轨迹及核验结果；用半径 0.21 米的球包住机体，并检查相邻真值帧之间的运动包围盒。
+仅在目标到达、多障碍物避让、机体间距和采样间距检查均通过后覆盖 GIF，
 并生成带 GIF 校验和的 `assets/demo.metrics.json`。未通过的运行会保留日志并返回失败。
 
 固定种子保证本环境下初始几何可重复。动态运动和规划使用实时 ROS 调度，运行时长、系统负载及手动目标的点击时刻不同，
 轨迹和消息时序可能不同；此仓库不声称默认真值仿真复现论文中的真实传感器实验或逐位相同的轨迹。
 更详细的数据流见 [ROS2.md](../ROS2.md)，验证记录见 [VALIDATION.md](VALIDATION.md)。
-

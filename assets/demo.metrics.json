@@ -1,45 +1,70 @@
 {
+  "avoidance_comparison": "remaining_previous_plan_until_next_goal",
   "avoided_conflicts": [
     {
-      "object_id": 56,
-      "replan_s": 10.087070941925049,
-      "conflict_s": 12.913836240768433,
+      "object_id": 1,
+      "replan_s": 5.5500102043151855,
+      "conflict_s": 6.965517997741699,
       "previous_plan_clearance_m": 0.0,
-      "flown_clearance_m": 0.5435682799970611
+      "flown_clearance_m": 0.6217752031755519
+    },
+    {
+      "object_id": 33,
+      "replan_s": 5.5500102043151855,
+      "conflict_s": 9.765608072280884,
+      "previous_plan_clearance_m": 0.0919103470635445,
+      "flown_clearance_m": 1.359535699425721
+    },
+    {
+      "object_id": 63,
+      "replan_s": 5.5500102043151855,
+      "conflict_s": 10.615498781204224,
+      "previous_plan_clearance_m": 0.0,
+      "flown_clearance_m": 1.2172944655528686
     },
     {
       "object_id": 6,
-      "replan_s": 16.627729177474976,
-      "conflict_s": 19.163853645324707,
-      "previous_plan_clearance_m": 0.0,
-      "flown_clearance_m": 1.095517086608147
+      "replan_s": 18.819185972213745,
+      "conflict_s": 20.81546950340271,
+      "previous_plan_clearance_m": 0.01728264681877345,
+      "flown_clearance_m": 0.508531846442405
     }
   ],
   "static_obstacles": 110,
   "dynamic_obstacles": 72,
   "map_seed": 3728542750,
   "playback_speed": 2.0,
-  "recorded_seconds": 21.066033124923706,
+  "max_vel_m_s": 3.5,
+  "safety_replan_interval_s": 0.2,
+  "planner_object_clearance_m": 1.5,
+  "recorded_seconds": 23.829653024673462,
   "goals_reached": 4,
   "goals_total": 4,
-  "path_m": 32.05545400862738,
-  "min_center_to_dynamic_aabb_m": 0.4694644921108032,
-  "min_center_to_static_point_m": 0.310238554906193,
+  "path_m": 33.00246916771474,
+  "drone_envelope_radius_m": 0.21,
+  "min_swept_dynamic_body_clearance_m": 0.20281165592839676,
+  "min_static_body_clearance_lower_bound_m": 0.10488582594281376,
+  "min_center_to_dynamic_aabb_m": 0.508531846442405,
+  "min_center_to_static_point_m": 0.4014883663212576,
   "moving_objects_within_1_5m": [
     1,
     6,
+    12,
+    16,
     24,
+    33,
     47,
+    48,
     56,
-    59
+    59,
+    63
   ],
-  "safety_replans": 16,
-  "dynamic_prediction_warnings": 689,
-  "trajectory_updates": 32,
-  "truth_samples": 421,
-  "max_truth_gap_s": 0.05330181121826172,
-  "max_odom_gap_s": 0.01648235321044922,
+  "safety_replans": 70,
+  "dynamic_prediction_warnings": 1412,
+  "trajectory_updates": 81,
+  "truth_samples": 477,
+  "max_truth_gap_s": 0.0560460090637207,
+  "max_odom_gap_s": 0.018019914627075195,
   "validation": "passed",
-  "gif_sha256": "5c6842db1d8fd4d43125ff2559d64d5fd41b3511205d0d591cb69b4cd1fd7785",
-  "avoidance_comparison": "remaining_previous_plan_until_next_goal"
+  "gif_sha256": "f83dc744391be97f2589903fed613fef60fbc3fb023da969ea3a402466414ef0"
 }

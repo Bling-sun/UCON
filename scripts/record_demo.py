@@ -15,7 +15,7 @@ import time
 
 import numpy as np
 import rclpy
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Point, PoseStamped
 from nav_msgs.msg import Odometry
 from obj_state_msgs.msg import ObjectsStates
 from traj_utils.msg import PolyTraj
@@ -68,12 +68,53 @@ def avoided_conflicts(telemetry):
     return sorted(events.values(), key=lambda event: event['replan_s'])
 
 
+# Encloses the installed 0.35-scaled mesh (measured radius 0.2002 m), at any yaw.
+DRONE_RADIUS = .21
+VOXEL_HALF_SIZE = .05
+
+
+def swept_body_clearance(telemetry):
+    """Conservative clearance between motion envelopes over each truth interval.
+
+    Include every odometry sample in the interval and both object AABBs, so
+    crossing between samples cannot pass a point-only check. The object envelope
+    also covers held/discrete positions and linear motion between truth frames.
+    This is a recorded-motion check, not a certificate for unobserved motion.
+    """
+    odom = np.asarray(telemetry['odom'])
+    begin, end = telemetry['recording_start'], telemetry['recording_end']
+    truth = telemetry['truth']
+    if (not truth or truth[0][0] > begin or truth[-1][0] < end
+            or odom[0, 0] > begin or odom[-1, 0] < end):
+        raise ValueError('Telemetry must bracket the complete recorded interval')
+    minimum = float('inf')
+    for (ta, oa), (tb, ob) in zip(truth, truth[1:]):
+        left, right = max(ta, begin), min(tb, end)
+        if left >= right:
+            continue
+        endpoints = np.array([[np.interp(t, odom[:, 0], odom[:, k])
+                               for k in range(1, 4)] for t in (left, right)])
+        positions = np.vstack((endpoints, odom[(odom[:, 0] > left) & (odom[:, 0] < right), 1:]))
+        low, high = positions.min(axis=0), positions.max(axis=0)
+        oa, ob = np.asarray(oa), np.asarray(ob)
+        if oa.shape != ob.shape or not len(oa):
+            raise ValueError('Object identities/count changed during recording')
+        box_low = np.minimum(oa[:, :3] - oa[:, 3:6]/2, ob[:, :3] - ob[:, 3:6]/2) - VOXEL_HALF_SIZE
+        box_high = np.maximum(oa[:, :3] + oa[:, 3:6]/2, ob[:, :3] + ob[:, 3:6]/2) + VOXEL_HALF_SIZE
+        gap = np.maximum(np.maximum(box_low - high, low - box_high), 0)
+        minimum = min(minimum, float(np.linalg.norm(gap, axis=1).min()) - DRONE_RADIUS)
+    return minimum
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--seconds', type=int, default=40, help='Maximum recording time; stop after all goals are reached')
     parser.add_argument('--domain', type=int, default=182)
     parser.add_argument('--output', default='assets/demo.gif')
     parser.add_argument('--speed', type=float, default=2.)
+    parser.add_argument('--max-vel', type=float, default=3.5)
+    parser.add_argument('--safety-interval', type=float, default=.2)
+    parser.add_argument('--object-clearance', type=float, default=1.5)
     parser.add_argument('--static-obstacles', type=int, default=110)
     parser.add_argument('--dynamic-obstacles', type=int, default=72)
     parser.add_argument('--map-seed', type=int, default=3728542750)
@@ -88,7 +129,8 @@ def main():
     if args.seconds < 8:
         parser.error('--seconds must be at least 8')
 
-    if args.speed <= 0 or args.static_obstacles < 1 or args.dynamic_obstacles < 1:
+    if (min(args.speed, args.max_vel, args.safety_interval, args.object_clearance) <= 0
+            or args.static_obstacles < 1 or args.dynamic_obstacles < 1):
         parser.error('Speed and obstacle count must be positive')
 
     output = Path(args.output).resolve()
@@ -108,7 +150,7 @@ def main():
     config['Window Geometry'] = {'Width': 1280, 'Height': 800, 'X': 0, 'Y': 0,
                                  'Hide Left Dock': True, 'Hide Right Dock': True}
     manager = config['Visualization Manager']
-    manager['Views']['Current'].update(Distance=18.0, Pitch=1.40, Yaw=1.57)
+    manager['Views']['Current'].update(Distance=18.0, Pitch=1.565, Yaw=1.57)
     manager['Views']['Current']['Focal Point'] = {'X': .5, 'Y': .5, 'Z': .3}
     manager['Displays'].append({
         'Class': 'rviz_default_plugins/Marker', 'Name': 'UAV label',
@@ -144,6 +186,9 @@ def main():
                 raise RuntimeError('Virtual display failed; see log/demo/display.log')
             time.sleep(.1)
         start([str(root / 'run_simulation.sh'), 'rviz:=false',
+               f'max_vel:={args.max_vel}',
+               f'safety_replan_interval:={args.safety_interval}',
+               f'object_clearance:={args.object_clearance}',
                f'static_obstacles:={args.static_obstacles}',
                f'dynamic_obstacles:={args.dynamic_obstacles}',
                f'map_seed:={args.map_seed}'], 'simulation')
@@ -221,7 +266,17 @@ def main():
                 label.color.r, label.color.g, label.color.b, label.color.a = .65, .12, .15, 1.
                 label.text = 'UAV'
                 annotation_pub.publish(label)
-                next_annotation = time.monotonic() + .1
+                footprint = Marker()
+                footprint.header = label.header
+                footprint.ns, footprint.id, footprint.type = 'demo', 1, Marker.LINE_STRIP
+                footprint.pose.orientation.w = 1.
+                footprint.scale.x = .035
+                footprint.color.r, footprint.color.g, footprint.color.b, footprint.color.a = 1., .4, .05, 1.
+                footprint.points = [Point(x=p.x + DRONE_RADIUS*math.cos(t),
+                                          y=p.y + DRONE_RADIUS*math.sin(t), z=p.z)
+                                    for t in np.linspace(0, 2*math.pi, 33)]
+                annotation_pub.publish(footprint)
+                next_annotation = time.monotonic() + .02
             if goal_index < len(planned_goals) and not goal_active and time.monotonic() >= next_goal:
                 goal = PoseStamped()
                 goal.header.frame_id = 'world'
@@ -246,6 +301,12 @@ def main():
         recorder.wait(timeout=10)
         if recorder.returncode not in (0, 255):
             raise RuntimeError('Recording failed; see log/demo/capture.log')
+        # Collect a frame after capture ends, to bracket the last video frame.
+        deadline = time.monotonic() + 2
+        while truth[-1][0] < recording_end or stamp(odom[-1]) < recording_end:
+            if time.monotonic() > deadline:
+                raise RuntimeError('Missing post-recording telemetry')
+            rclpy.spin_once(node, timeout_sec=.02)
         odometry = [[stamp(m), m.pose.pose.position.x, m.pose.pose.position.y, m.pose.pose.position.z]
                     for m in odom]
         telemetry = {'recording_start': recording_stamp, 'recording_end': recording_end,
@@ -273,13 +334,19 @@ def main():
         # A safety replan follows a prediction of conflict, not a physical collision.
         replans = len(re.findall(r'Plan success when detect collision', simulation_log))
         dynamic_warnings = len(re.findall(r'detect collision with objects', simulation_log))
+        body_clearance = swept_body_clearance(telemetry)
+        static_body_clearance = static_clearance - DRONE_RADIUS - math.sqrt(3)*VOXEL_HALF_SIZE
         conflicts = avoided_conflicts(telemetry)
         summary = {'avoidance_comparison': 'remaining_previous_plan_until_next_goal',
                    'avoided_conflicts': conflicts, 'static_obstacles': args.static_obstacles, 'dynamic_obstacles': args.dynamic_obstacles,
                    'map_seed': args.map_seed, 'playback_speed': args.speed,
+                   'max_vel_m_s': args.max_vel, 'safety_replan_interval_s': args.safety_interval,
+                   'planner_object_clearance_m': args.object_clearance,
                    'recorded_seconds': recording_end - recording_stamp,
                    'goals_reached': len(reached), 'goals_total': len(planned_goals),
-                   'path_m': distance, 'min_center_to_dynamic_aabb_m': closest,
+                   'path_m': distance, 'drone_envelope_radius_m': DRONE_RADIUS,
+                   'min_swept_dynamic_body_clearance_m': body_clearance,
+                   'min_static_body_clearance_lower_bound_m': static_body_clearance, 'min_center_to_dynamic_aabb_m': closest,
                    'min_center_to_static_point_m': static_clearance,
                    'moving_objects_within_1_5m': sorted(near_ids),
                    'safety_replans': replans, 'dynamic_prediction_warnings': dynamic_warnings,
@@ -288,6 +355,7 @@ def main():
                    'max_odom_gap_s': float(np.max(np.diff(a[:, 0]))),
                    'validation': 'pending'}
         valid = (len(reached) == len(planned_goals) and distance > 15 and closest >= .25
+                 and body_clearance >= .15 and static_body_clearance >= 0
                  and static_clearance >= .25 and len(near_ids) >= 3 and replans >= 3
                  and dynamic_warnings > 0 and len(conflicts) >= 2 and len(samples) > 1
                  and summary['max_truth_gap_s'] < .2 and summary['max_odom_gap_s'] < .1
@@ -301,7 +369,8 @@ def main():
             f'setpts=(PTS-STARTPTS)/{args.speed},fps=20,crop=1250:690:15:80,scale=800:442:flags=lanczos,'
             'pad=800:520:0:40:color=0xF6F5F4,'
             f"drawtext=text='UCON | Multiple moving obstacles | {args.speed:g}x':x=22:y=10:fontsize=20:fontcolor=0x23334A,"
-            f"drawtext=text='{args.static_obstacles} static / {args.dynamic_obstacles} moving | Ground-truth boxes within 4.5 m':x=22:y=496:fontsize=13:fontcolor=0x42546A,"
+            f"drawtext=text='{args.static_obstacles} static / {args.dynamic_obstacles} moving | Ground-truth boxes within 4.5 m':x=22:y=490:fontsize=12:fontcolor=0x42546A,"
+            "drawtext=text='Orange ring = UAV body | Teal = flown path | Red = planned path':x=22:y=507:fontsize=10:fontcolor=0x42546A,"
             'split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];'
             '[b][p]paletteuse=dither=none:diff_mode=rectangle'
         )
